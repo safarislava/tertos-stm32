@@ -81,15 +81,50 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackTyp
     *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
 }
 
+osThreadId Task1Handle;
+osThreadId Task2Handle;
+
+void StartTask1(void const *argument);
+void StartTask2(void const *argument);
+
 /**
  * @brief  FreeRTOS initialization
  * @param  None
  * @retval None
  */
 void MX_FREERTOS_Init(void) {
-    /* Create the queue(s) */
-
     /* Create the thread(s) */
+    osThreadDef(Task1, StartTask1, osPriorityNormal, 0, 128);
+    Task1Handle = osThreadCreate(osThread(Task1), NULL);
+
+    osThreadDef(Task2, StartTask2, osPriorityNormal, 0, 128);
+    Task2Handle = osThreadCreate(osThread(Task2), NULL);
+}
+
+/**
+ * @brief  Function implementing the Task1 thread.
+ * @param  argument: Not used
+ * @retval None
+ */
+void StartTask1(void const *argument) {
+    /* Infinite loop */
+    for (;;) {
+        HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
+        osDelay(500);
+    }
+}
+
+/**
+ * @brief  Function implementing the Task2 thread.
+ * @param  argument: Not used
+ * @retval None
+ */
+void StartTask2(void const *argument) {
+    /* Infinite loop */
+    for (;;) {
+        HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
+        osDelay(250);
+    }
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

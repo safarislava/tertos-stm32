@@ -51,13 +51,8 @@
 #include "usart.h"
 #include "gpio.h"
 
-osThreadId task1Handle;
-osThreadId task2Handle;
-
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
-void StartTask1(void const *argument);
-void StartTask2(void const *argument);
 
 /**
  * @brief  The application entry point.
@@ -74,16 +69,9 @@ int main(void) {
     MX_GPIO_Init();
     MX_USART1_UART_Init();
 
-    /* Create Thread 1 */
-    osThreadDef(Task1, StartTask1, osPriorityNormal, 0, 128);
-    task1Handle = osThreadCreate(osThread(Task1), NULL);
-
-    /* Create Thread 2 */
-    osThreadDef(Task2, StartTask2, osPriorityNormal, 0, 128);
-    task2Handle = osThreadCreate(osThread(Task2), NULL);
-
     /* Call init function for freertos objects (in freertos.c) */
     MX_FREERTOS_Init();
+
     /* Start scheduler */
     osKernelStart();
 
@@ -123,32 +111,6 @@ void SystemClock_Config(void) {
 
     if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK) {
         Error_Handler();
-    }
-}
-
-/**
- * @brief  Function implementing the Task1 thread.
- * @param  argument: Not used
- * @retval None
- */
-void StartTask1(void const *argument) {
-    /* Infinite loop */
-    for (;;) {
-        HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
-        osDelay(500);
-    }
-}
-
-/**
- * @brief  Function implementing the Task2 thread.
- * @param  argument: Not used
- * @retval None
- */
-void StartTask2(void const *argument) {
-    /* Infinite loop */
-    for (;;) {
-        HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
-        osDelay(250);
     }
 }
 
