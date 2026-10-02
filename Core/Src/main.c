@@ -77,14 +77,16 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+osThreadId task1Handle;
+osThreadId task2Handle;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
-
+void StartTask1(void const *argument);
+void StartTask2(void const *argument);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -122,6 +124,14 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+
+  /* Create Thread 1 */
+  osThreadDef(Task1, StartTask1, osPriorityNormal, 0, 128);
+  task1Handle = osThreadCreate(osThread(Task1), NULL);
+
+  /* Create Thread 2 */
+  osThreadDef(Task2, StartTask2, osPriorityNormal, 0, 128);
+  task2Handle = osThreadCreate(osThread(Task2), NULL);
 
   /* USER CODE END 2 */
 
@@ -181,7 +191,35 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+/**
+  * @brief  Function implementing the Task1 thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+void StartTask1(void const *argument)
+{
+  /* Infinite loop */
+  for (;;)
+  {
+    HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
+    osDelay(500);
+  }
+}
 
+/**
+  * @brief  Function implementing the Task2 thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+void StartTask2(void const *argument)
+{
+  /* Infinite loop */
+  for (;;)
+  {
+    HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_14);
+    osDelay(250);
+  }
+}
 /* USER CODE END 4 */
 
  /**

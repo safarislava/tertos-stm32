@@ -79,19 +79,11 @@
 /* USER CODE BEGIN Variables */
 
 /* USER CODE END Variables */
-osThreadId Task_LED1Handle;
-osThreadId Task_UARTHandle;
-osThreadId Task_LED2Handle;
-osMessageQId myQueue01Handle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
    
 /* USER CODE END FunctionPrototypes */
-
-void StartTaskLED1(void const * argument);
-void StartTaskUART(void const * argument);
-void StartTasLED2(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -151,102 +143,15 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_TIMERS */
 
   /* Create the queue(s) */
-  /* definition and creation of myQueue01 */
-  osMessageQDef(myQueue01, 16, uint16_t);
-  myQueue01Handle = osMessageCreate(osMessageQ(myQueue01), NULL);
-
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* definition and creation of Task_LED1 */
-  osThreadDef(Task_LED1, StartTaskLED1, osPriorityNormal, 0, 128);
-  Task_LED1Handle = osThreadCreate(osThread(Task_LED1), NULL);
-
-  /* definition and creation of Task_UART */
-  osThreadDef(Task_UART, StartTaskUART, osPriorityNormal, 0, 128);
-  Task_UARTHandle = osThreadCreate(osThread(Task_UART), NULL);
-
-  /* definition and creation of Task_LED2 */
-  osThreadDef(Task_LED2, StartTasLED2, osPriorityNormal, 0, 128);
-  Task_LED2Handle = osThreadCreate(osThread(Task_LED2), NULL);
-
   /* USER CODE BEGIN RTOS_THREADS */
-  vQueueAddToRegistry(myQueue01Handle, "queue1");
+  /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
-}
-
-/* USER CODE BEGIN Header_StartTaskLED1 */
-/**
-  * @brief  Function implementing the Task_LED1 thread.
-  * @param  argument: Not used 
-  * @retval None
-  */
-/* USER CODE END Header_StartTaskLED1 */
-void StartTaskLED1(void const * argument)
-{
-  /* USER CODE BEGIN StartTaskLED1 */
-  /* Infinite loop */
-  uint32_t state;
-  for(;;)
-  {
-	  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_15);
-	  if (HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_15) == GPIO_PIN_SET) {
-		  state = 0x01;
-		  osMessagePut(myQueue01Handle, state, 100);
-	  } else {
-		  state = 0x00;
-		  osMessagePut(myQueue01Handle, state, 100);
-	  }
-	  osDelay(500);
-  }
-  /* USER CODE END StartTaskLED1 */
-}
-
-/* USER CODE BEGIN Header_StartTaskUART */
-/**
-* @brief Function implementing the Task_UART thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartTaskUART */
-void StartTaskUART(void const * argument)
-{
-  /* USER CODE BEGIN StartTaskUART */
-  /* Infinite loop */
-	osEvent event;
-	char *state;
-	for(;;)
-	  {
-		event = osMessageGet(myQueue01Handle, 100);
-		if (event.status == osEventMessage) {
-			state = event.value.v == 0x00 ? "reset\n\r" : "set\n\r";
-			HAL_UART_Transmit(&huart1, (uint8_t *)state, strlen(state), 100);
-		}
-		osDelay(1);
-	  }
-  /* USER CODE END StartTaskUART */
-}
-
-/* USER CODE BEGIN Header_StartTasLED2 */
-/**
-* @brief Function implementing the Task_LED2 thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartTasLED2 */
-void StartTasLED2(void const * argument)
-{
-  /* USER CODE BEGIN StartTasLED2 */
-  /* Infinite loop */
-  for(;;)
-  {
-	  HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
-	  osDelay(400);
-  }
-  /* USER CODE END StartTasLED2 */
 }
 
 /* Private application code --------------------------------------------------*/
