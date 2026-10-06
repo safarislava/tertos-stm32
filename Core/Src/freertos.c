@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
 #include "task.h"
+#include "kb.h"
 #include "main.h"
 #include "cmsis_os.h"
 
@@ -150,8 +151,13 @@ void StartTaskUserInput(void const * argument)
 {
   /* USER CODE BEGIN StartTaskUserInput */
   /* Infinite loop */
-  for(;;)
+  while (1)
   {
+    enum Button key = Get_Char();
+    if (key != B_NONE)
+    {
+      osMessagePut(userInputQueueHandle, key,10);
+    }
     osDelay(1);
   }
   /* USER CODE END StartTaskUserInput */
@@ -168,8 +174,28 @@ void StartTaskGame(void const * argument)
 {
   /* USER CODE BEGIN StartTaskGame */
   /* Infinite loop */
-  for(;;)
+  while(1)
   {
+    osEvent event = osMessageGet(userInputQueueHandle, 0);
+    if (event.status == osEventMessage)
+    {
+      enum Button key = (enum Button)event.value.v;
+      switch (key)
+      {
+      case B_UP:
+        break;
+      case B_DOWN:
+        break;
+      case B_LEFT:
+        break;
+      case B_RIGHT:
+        break;
+      case B_PAUSE:
+        break;
+      default:
+        break;
+      }
+    }
     osDelay(1);
   }
   /* USER CODE END StartTaskGame */

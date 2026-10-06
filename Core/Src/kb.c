@@ -26,7 +26,7 @@ exit:
     return ret;
 }
 
-char Check_Row(uint8_t row) {
+enum Button Check_Row(uint8_t row) {
     char key = '\0';
     HAL_StatusTypeDef ret = HAL_OK;
     uint8_t buf;
@@ -51,29 +51,29 @@ char Check_Row(uint8_t row) {
     in = buf & 0x70;
     if (in != 0x70) {
         if (!(in & 0x10)) {
-            if (row == ROW1) return '1';
-            if (row == ROW2) return '4';
-            if (row == ROW3) return '7';
-            if (row == ROW4) return '*';
+            if (row == ROW1) return B_PAUSE;
+            if (row == ROW2) return B_LEFT;
+            if (row == ROW3) return B_NONE;
+            if (row == ROW4) return B_NONE;
         }
         if (!(in & 0x20)) {
-            if (row == ROW1) return '2';
-            if (row == ROW2) return '5';
-            if (row == ROW3) return '8';
-            if (row == ROW4) return '0';
+            if (row == ROW1) return B_UP;
+            if (row == ROW2) return B_NONE;
+            if (row == ROW3) return B_DOWN;
+            if (row == ROW4) return B_NONE;
         }
         if (!(in & 0x40)) {
-            if (row == ROW1) return '3';
-            if (row == ROW2) return '6';
-            if (row == ROW3) return '9';
-            if (row == ROW4) return '#';
+            if (row == ROW1) return B_NONE;
+            if (row == ROW2) return B_RIGHT;
+            if (row == ROW3) return B_NONE;
+            if (row == ROW4) return B_NONE;
         }
     }
 
     return key;
 }
 
-char Get_Char(void) {
+enum Button Get_Char(void) {
     static char last_key = '\0';
     uint8_t rows[4] = {ROW1, ROW2, ROW3, ROW4};
     char current_key = '\0';
