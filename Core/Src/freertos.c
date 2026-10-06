@@ -45,10 +45,11 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-
+osMessageQId userInputQueueHandle;
 /* USER CODE END Variables */
 osThreadId Task_UserInputHandle;
 osThreadId Task_GameHandle;
+osMessageQId userInputQueueHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -113,6 +114,11 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
+
+  /* Create the queue(s) */
+  /* definition and creation of userInputQueue */
+  osMessageQDef(userInputQueue, 16, uint16_t);
+  userInputQueueHandle = osMessageCreate(osMessageQ(userInputQueue), NULL);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
