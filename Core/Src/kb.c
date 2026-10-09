@@ -27,7 +27,6 @@ exit:
 }
 
 enum Button Check_Row(uint8_t row) {
-    char key = '\0';
     HAL_StatusTypeDef ret = HAL_OK;
     uint8_t buf;
     uint8_t in;
@@ -35,17 +34,20 @@ enum Button Check_Row(uint8_t row) {
     ret = Set_Keyboard();
     if (ret != HAL_OK) {
         UART_Transmit((uint8_t *) "Error write init\n");
+        return B_NONE;
     }
 
     buf = row;
     ret = PCA9538_Write_Register(KBRD_ADDR, CONFIG, &buf);
     if (ret != HAL_OK) {
         UART_Transmit((uint8_t *) "Error write config\n");
+        return B_NONE;
     }
 
     ret = PCA9538_Read_Inputs(KBRD_ADDR, &buf);
     if (ret != HAL_OK) {
         UART_Transmit((uint8_t *) "Read error\n");
+        return B_NONE;
     }
 
     in = buf & 0x70;
@@ -70,30 +72,30 @@ enum Button Check_Row(uint8_t row) {
         }
     }
 
-    return key;
+    return B_NONE;
 }
 
 enum Button Get_Char(void) {
-    static char last_key = '\0';
+    static enum Button last_key = B_NONE;
     uint8_t rows[4] = {ROW1, ROW2, ROW3, ROW4};
-    char current_key = '\0';
+    enum Button current_key = B_NONE;
 
     for (int i = 0; i < 4; i++) {
-        char key = Check_Row(rows[i]);
-        if (key != '\0') {
+        enum Button key = Check_Row(rows[i]);
+        if (key != B_NONE) {
             current_key = key;
             break;
         }
     }
 
-    if (current_key != '\0' && current_key != last_key) {
+    if (current_key != B_NONE && current_key != last_key) {
         last_key = current_key;
         HAL_Delay(20);
         return current_key;
     }
-    if (current_key == '\0') {
-        last_key = '\0';
+    if (current_key == B_NONE) {
+        last_key = B_NONE;
     }
 
-    return '\0';
+    return B_NONE;
 }

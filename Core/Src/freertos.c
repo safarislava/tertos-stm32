@@ -26,6 +26,9 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "kb.h"
+#include "queue.h"
+#include "tetris_runtime.h"
+#include <stdlib.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,7 +48,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-osMessageQId userInputQueueHandle;
+static QueueHandle_t tetrisGameQueueHandle;
+static TetrisGame tetrisGame;
 /* USER CODE END Variables */
 osThreadId Task_UserInputHandle;
 osThreadId Task_GameHandle;
@@ -53,7 +57,7 @@ osMessageQId userInputQueueHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-
+static bool apply_button(enum Button key);
 /* USER CODE END FunctionPrototypes */
 
 void StartTaskUserInput(void const * argument);
@@ -121,7 +125,9 @@ void MX_FREERTOS_Init(void) {
   userInputQueueHandle = osMessageCreate(osMessageQ(userInputQueue), NULL);
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
+  tetrisGameQueueHandle = xQueueCreate(1, sizeof(TetrisGame));
+  configASSERT(userInputQueueHandle != NULL);
+  configASSERT(tetrisGameQueueHandle != NULL);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -130,11 +136,12 @@ void MX_FREERTOS_Init(void) {
   Task_UserInputHandle = osThreadCreate(osThread(Task_UserInput), NULL);
 
   /* definition and creation of Task_Game */
-  osThreadDef(Task_Game, StartTaskGame, osPriorityNormal, 0, 128);
+  osThreadDef(Task_Game, StartTaskGame, osPriorityNormal, 0, 512);
   Task_GameHandle = osThreadCreate(osThread(Task_Game), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+  configASSERT(Task_UserInputHandle != NULL);
+  configASSERT(Task_GameHandle != NULL);
   /* USER CODE END RTOS_THREADS */
 
 }
@@ -149,6 +156,7 @@ void MX_FREERTOS_Init(void) {
 void StartTaskUserInput(void const * argument)
 {
   /* USER CODE BEGIN StartTaskUserInput */
+  (void)argument;
   /* Infinite loop */
   while (1)
   {
@@ -172,35 +180,57 @@ void StartTaskUserInput(void const * argument)
 void StartTaskGame(void const * argument)
 {
   /* USER CODE BEGIN StartTaskGame */
-  /* Infinite loop */
-  while(1)
+  (void)argument;
+  srand(HAL_GetTick());
+  tetris_init(&tetrisGame);
+  xQueueOverwrite(tetrisGameQueueHandle, &tetrisGame);
+
+  uint32_t previousTime = HAL_GetTick();
+  while (1)
   {
-    osEvent event = osMessageGet(userInputQueueHandle, 0);
+    /* Wake for input or at least every 10 ms to advance gravity. */
+    osEvent event = osMessageGet(userInputQueueHandle, 10);
+    uint32_t now = HAL_GetTick();
+    uint32_t elapsedMs = now - previousTime;
+    previousTime = now;
+
+    /* Account for elapsed time before applying the command received now. */
+    bool changed = tetris_update(&tetrisGame, elapsedMs);
     if (event.status == osEventMessage)
     {
-      enum Button key = (enum Button)event.value.v;
-      switch (key)
-      {
-      case B_UP:
-        break;
-      case B_DOWN:
-        break;
-      case B_LEFT:
-        break;
-      case B_RIGHT:
-        break;
-      case B_PAUSE:
-        break;
-      default:
-        break;
-      }
+      changed = apply_button((enum Button)event.value.v) || changed;
     }
-    osDelay(1);
+    if (changed)
+    {
+      xQueueOverwrite(tetrisGameQueueHandle, &tetrisGame);
+    }
   }
   /* USER CODE END StartTaskGame */
 }
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
+static bool apply_button(enum Button key)
+{
+  switch (key)
+  {
+  case B_UP:
+    return tetris_command(&tetrisGame, TETRIS_CMD_ROTATE);
+  case B_DOWN:
+    return tetris_command(&tetrisGame, TETRIS_CMD_DOWN);
+  case B_LEFT:
+    return tetris_command(&tetrisGame, TETRIS_CMD_LEFT);
+  case B_RIGHT:
+    return tetris_command(&tetrisGame, TETRIS_CMD_RIGHT);
+  case B_PAUSE:
+    return tetris_command(&tetrisGame, TETRIS_CMD_PAUSE);
+  default:
+    return false;
+  }
+}
 
+bool tetris_receive_game(TetrisGame *game, TickType_t wait_ticks)
+{
+  return xQueueReceive(tetrisGameQueueHandle, game, wait_ticks) == pdPASS;
+}
 /* USER CODE END Application */

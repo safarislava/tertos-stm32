@@ -25,6 +25,12 @@ set(MX_Application_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/main.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/gpio.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/freertos.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/kb.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/pca9538.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/sdk_uart.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/oled.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/tetris.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/tetris_shapes.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/i2c.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/usart.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/stm32f4xx_it.c
