@@ -113,7 +113,6 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_MUTEX */
   i2cMutexHandle = xSemaphoreCreateMutex();
-  configASSERT(i2cMutexHandle != NULL);
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
@@ -131,8 +130,6 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_QUEUES */
   tetrisGameQueueHandle = xQueueCreate(1, sizeof(TetrisGame));
-  configASSERT(userInputQueueHandle != NULL);
-  configASSERT(tetrisGameQueueHandle != NULL);
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -149,9 +146,7 @@ void MX_FREERTOS_Init(void) {
   Task_OLEDHandle = osThreadCreate(osThread(Task_OLED), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  configASSERT(Task_UserInputHandle != NULL);
-  configASSERT(Task_GameHandle != NULL);
-  configASSERT(Task_OLEDHandle != NULL);
+
   /* USER CODE END RTOS_THREADS */
 
 }
@@ -268,46 +263,16 @@ void StartTaskOLED(void const * argument)
     i2c_unlock();
   }
 
-  TetrisGame frame;
-  static uint32_t best_score = 0;
-  bool pause_blink_on = true;
-  bool has_frame = false;
+  TetrisGame game;
+  tetris_receive_game(&game, portMAX_DELAY);
 
   while (1)
   {
-    /* If paused, wake up every 500 ms to blink PAUSE banner at 1 Hz */
-    TickType_t wait_ticks = (has_frame && frame.phase == TETRIS_PAUSED)
-                            ? pdMS_TO_TICKS(500)
-                            : portMAX_DELAY;
-
-    if (tetris_receive_game(&frame, wait_ticks))
+    tetris_render(&game);
+    if (i2c_lock(portMAX_DELAY))
     {
-      has_frame = true;
-      if (frame.score > best_score)
-      {
-        best_score = frame.score;
-      }
-      if (frame.phase == TETRIS_PAUSED)
-      {
-        pause_blink_on = true;
-      }
-    }
-    else
-    {
-      if (has_frame && frame.phase == TETRIS_PAUSED)
-      {
-        pause_blink_on = !pause_blink_on;
-      }
-    }
-
-    if (has_frame)
-    {
-      tetris_render(&frame, best_score, pause_blink_on);
-      if (i2c_lock(portMAX_DELAY))
-      {
-        oled_UpdateScreen();
-        i2c_unlock();
-      }
+      oled_UpdateScreen();
+      i2c_unlock();
     }
   }
   /* USER CODE END StartTaskOLED */

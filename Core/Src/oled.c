@@ -14,8 +14,8 @@ static void oled_WriteCommand(uint8_t command) {
 
 
 uint8_t oled_Init(void) {
+	HAL_Delay(100);
 	PCA9538_OLED_Reset();
-	HAL_Delay(10);
 
 	oled_WriteCommand(0xAE);
 	oled_WriteCommand(0x20);
@@ -169,19 +169,14 @@ void oled_DrawFilledRectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, OL
 	}
 }
 
-void tetris_render(const TetrisGame *game, uint32_t best_score, bool pause_blink_on) {
+void tetris_render(const TetrisGame *game) {
 	if (game == NULL) {
 		return;
 	}
 
 	oled_Fill(Black);
-
-	/* 1. Playing field frame (стакан) */
-	/* 10 cols x 20 rows of 3x3 blocks = 30x60 pixels. */
-	/* Field interior: x=2..31, y=2..61. Surrounding frame: x=1..32, y=1..62. */
 	oled_DrawSquare(1, 32, 1, 62, White);
 
-	/* 2. Draw active + locked blocks */
 	for (int row = 0; row < TETRIS_ROWS; row++) {
 		for (int col = 0; col < TETRIS_COLS; col++) {
 			if (tetris_cell(game, col, row) != 0) {
@@ -192,29 +187,18 @@ void tetris_render(const TetrisGame *game, uint32_t best_score, bool pause_blink
 		}
 	}
 
-	/* 3. Right information panel */
-	/* Header */
 	oled_SetCursor(38, 2);
-	oled_WriteString("TETRISUS", Font_7x10, White);
+	oled_WriteString("TERTOS", Font_7x10, White);
 
-	/* Current score */
 	char buf[16];
-	snprintf(buf, sizeof(buf), "SC:%lu", (unsigned long)game->score);
+	snprintf(buf, sizeof(buf), "%lu", (unsigned long)game->score);
 	oled_SetCursor(38, 15);
 	oled_WriteString(buf, Font_7x10, White);
 
-	/* Best score */
-	snprintf(buf, sizeof(buf), "HI:%lu", (unsigned long)best_score);
-	oled_SetCursor(38, 28);
-	oled_WriteString(buf, Font_7x10, White);
-
-	/* 4. Status banner at the bottom (y=43..59) */
 	if (game->phase == TETRIS_PAUSED) {
-		if (pause_blink_on) {
-			oled_DrawSquare(44, 122, 43, 59, White);
-			oled_SetCursor(65, 46);
-			oled_WriteString("PAUSE", Font_7x10, White);
-		}
+		oled_DrawSquare(44, 122, 43, 59, White);
+		oled_SetCursor(65, 46);
+		oled_WriteString("PAUSE", Font_7x10, White);
 	} else if (game->phase == TETRIS_GAME_OVER) {
 		oled_DrawSquare(36, 126, 43, 59, White);
 		oled_SetCursor(50, 46);
