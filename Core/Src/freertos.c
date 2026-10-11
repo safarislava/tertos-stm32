@@ -28,6 +28,8 @@
 #include "kb.h"
 #include "queue.h"
 #include "tetris_runtime.h"
+#include "oled.h"
+#include "i2c.h"
 #include <stdlib.h>
 /* USER CODE END Includes */
 
@@ -53,6 +55,7 @@ static TetrisGame tetrisGame;
 /* USER CODE END Variables */
 osThreadId Task_UserInputHandle;
 osThreadId Task_GameHandle;
+osThreadId Task_OLEDHandle;
 osMessageQId userInputQueueHandle;
 
 /* Private function prototypes -----------------------------------------------*/
@@ -62,6 +65,7 @@ static bool apply_button(enum Button key);
 
 void StartTaskUserInput(void const * argument);
 void StartTaskGame(void const * argument);
+void StartTaskOLED(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -108,7 +112,8 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
+  i2cMutexHandle = xSemaphoreCreateMutex();
+  configASSERT(i2cMutexHandle != NULL);
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
@@ -139,9 +144,14 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(Task_Game, StartTaskGame, osPriorityNormal, 0, 512);
   Task_GameHandle = osThreadCreate(osThread(Task_Game), NULL);
 
+  /* definition and creation of Task_OLED */
+  osThreadDef(Task_OLED, StartTaskOLED, osPriorityNormal, 0, 512);
+  Task_OLEDHandle = osThreadCreate(osThread(Task_OLED), NULL);
+
   /* USER CODE BEGIN RTOS_THREADS */
   configASSERT(Task_UserInputHandle != NULL);
   configASSERT(Task_GameHandle != NULL);
+  configASSERT(Task_OLEDHandle != NULL);
   /* USER CODE END RTOS_THREADS */
 
 }
@@ -160,12 +170,17 @@ void StartTaskUserInput(void const * argument)
   /* Infinite loop */
   while (1)
   {
-    enum Button key = Get_Char();
+    enum Button key = B_NONE;
+    if (i2c_lock(pdMS_TO_TICKS(50)))
+    {
+      key = Get_Char();
+      i2c_unlock();
+    }
     if (key != B_NONE)
     {
-      osMessagePut(userInputQueueHandle, key,10);
+      osMessagePut(userInputQueueHandle, key, 10);
     }
-    osDelay(1);
+    osDelay(10);
   }
   /* USER CODE END StartTaskUserInput */
 }
@@ -232,5 +247,69 @@ static bool apply_button(enum Button key)
 bool tetris_receive_game(TetrisGame *game, TickType_t wait_ticks)
 {
   return xQueueReceive(tetrisGameQueueHandle, game, wait_ticks) == pdPASS;
+}
+
+/* USER CODE BEGIN Header_StartTaskOLED */
+/**
+* @brief Function implementing the Task_OLED thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartTaskOLED */
+void StartTaskOLED(void const * argument)
+{
+  /* USER CODE BEGIN StartTaskOLED */
+  (void)argument;
+
+  /* Initialize OLED display with mutex held */
+  if (i2c_lock(portMAX_DELAY))
+  {
+    oled_Init();
+    i2c_unlock();
+  }
+
+  TetrisGame frame;
+  static uint32_t best_score = 0;
+  bool pause_blink_on = true;
+  bool has_frame = false;
+
+  while (1)
+  {
+    /* If paused, wake up every 500 ms to blink PAUSE banner at 1 Hz */
+    TickType_t wait_ticks = (has_frame && frame.phase == TETRIS_PAUSED)
+                            ? pdMS_TO_TICKS(500)
+                            : portMAX_DELAY;
+
+    if (tetris_receive_game(&frame, wait_ticks))
+    {
+      has_frame = true;
+      if (frame.score > best_score)
+      {
+        best_score = frame.score;
+      }
+      if (frame.phase == TETRIS_PAUSED)
+      {
+        pause_blink_on = true;
+      }
+    }
+    else
+    {
+      if (has_frame && frame.phase == TETRIS_PAUSED)
+      {
+        pause_blink_on = !pause_blink_on;
+      }
+    }
+
+    if (has_frame)
+    {
+      tetris_render(&frame, best_score, pause_blink_on);
+      if (i2c_lock(portMAX_DELAY))
+      {
+        oled_UpdateScreen();
+        i2c_unlock();
+      }
+    }
+  }
+  /* USER CODE END StartTaskOLED */
 }
 /* USER CODE END Application */

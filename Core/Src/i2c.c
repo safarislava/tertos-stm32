@@ -21,7 +21,24 @@
 #include "i2c.h"
 
 /* USER CODE BEGIN 0 */
+SemaphoreHandle_t i2cMutexHandle = NULL;
 
+bool i2c_lock(TickType_t timeout)
+{
+  if (i2cMutexHandle == NULL)
+  {
+    return true;
+  }
+  return xSemaphoreTake(i2cMutexHandle, timeout) == pdTRUE;
+}
+
+void i2c_unlock(void)
+{
+  if (i2cMutexHandle != NULL)
+  {
+    xSemaphoreGive(i2cMutexHandle);
+  }
+}
 /* USER CODE END 0 */
 
 I2C_HandleTypeDef hi2c1;

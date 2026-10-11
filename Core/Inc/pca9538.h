@@ -23,5 +23,6 @@ HAL_StatusTypeDef PCA9538_Write_Register(uint16_t addr, pca9538_regs_t reg, uint
 HAL_StatusTypeDef PCA9538_Read_Config(uint16_t addr, uint8_t* buf);
 HAL_StatusTypeDef PCA9538_Check_DefaultConfig(uint16_t addr);
 HAL_StatusTypeDef PCA9538_Read_Inputs(uint16_t addr, uint8_t* buf);
+HAL_StatusTypeDef PCA9538_OLED_Reset(void);
 
 #endif /* PCA9538_H_ */

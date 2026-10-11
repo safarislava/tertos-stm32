@@ -1,5 +1,7 @@
 #include "oled.h"
 #include "i2c.h"
+#include "pca9538.h"
+#include <stdio.h>
 
 static uint8_t OLED_Buffer[1024];
 
@@ -12,7 +14,8 @@ static void oled_WriteCommand(uint8_t command) {
 
 
 uint8_t oled_Init(void) {
-	HAL_Delay(100);
+	PCA9538_OLED_Reset();
+	HAL_Delay(10);
 
 	oled_WriteCommand(0xAE);
 	oled_WriteCommand(0x20);
@@ -146,4 +149,75 @@ char oled_WriteString(char* str, FontDef Font, OLED_COLOR color) {
 void oled_SetCursor(uint8_t x, uint8_t y) {
 	OLED.CurrentX = x;
 	OLED.CurrentY = y;
+}
+
+void oled_DrawFilledRectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, OLED_COLOR color) {
+	if (x1 > x2) {
+		uint8_t t = x1;
+		x1 = x2;
+		x2 = t;
+	}
+	if (y1 > y2) {
+		uint8_t t = y1;
+		y1 = y2;
+		y2 = t;
+	}
+	for (uint8_t y = y1; y <= y2; y++) {
+		for (uint8_t x = x1; x <= x2; x++) {
+			oled_DrawPixel(x, y, color);
+		}
+	}
+}
+
+void tetris_render(const TetrisGame *game, uint32_t best_score, bool pause_blink_on) {
+	if (game == NULL) {
+		return;
+	}
+
+	oled_Fill(Black);
+
+	/* 1. Playing field frame (стакан) */
+	/* 10 cols x 20 rows of 3x3 blocks = 30x60 pixels. */
+	/* Field interior: x=2..31, y=2..61. Surrounding frame: x=1..32, y=1..62. */
+	oled_DrawSquare(1, 32, 1, 62, White);
+
+	/* 2. Draw active + locked blocks */
+	for (int row = 0; row < TETRIS_ROWS; row++) {
+		for (int col = 0; col < TETRIS_COLS; col++) {
+			if (tetris_cell(game, col, row) != 0) {
+				uint8_t px = (uint8_t)(2 + col * 3);
+				uint8_t py = (uint8_t)(2 + row * 3);
+				oled_DrawFilledRectangle(px, py, px + 2, py + 2, White);
+			}
+		}
+	}
+
+	/* 3. Right information panel */
+	/* Header */
+	oled_SetCursor(38, 2);
+	oled_WriteString("TETRISUS", Font_7x10, White);
+
+	/* Current score */
+	char buf[16];
+	snprintf(buf, sizeof(buf), "SC:%lu", (unsigned long)game->score);
+	oled_SetCursor(38, 15);
+	oled_WriteString(buf, Font_7x10, White);
+
+	/* Best score */
+	snprintf(buf, sizeof(buf), "HI:%lu", (unsigned long)best_score);
+	oled_SetCursor(38, 28);
+	oled_WriteString(buf, Font_7x10, White);
+
+	/* 4. Status banner at the bottom (y=43..59) */
+	if (game->phase == TETRIS_PAUSED) {
+		if (pause_blink_on) {
+			oled_DrawSquare(44, 122, 43, 59, White);
+			oled_SetCursor(65, 46);
+			oled_WriteString("PAUSE", Font_7x10, White);
+		}
+	} else if (game->phase == TETRIS_GAME_OVER) {
+		oled_DrawSquare(36, 126, 43, 59, White);
+		oled_SetCursor(50, 46);
+		oled_WriteString("GAME OVER", Font_7x10, White);
+	}
 }

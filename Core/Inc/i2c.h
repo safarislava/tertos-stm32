@@ -41,7 +41,14 @@ extern I2C_HandleTypeDef hi2c1;
 void MX_I2C1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+#include "FreeRTOS.h"
+#include "semphr.h"
+#include <stdbool.h>
 
+extern SemaphoreHandle_t i2cMutexHandle;
+
+bool i2c_lock(TickType_t timeout);
+void i2c_unlock(void);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

@@ -1,5 +1,6 @@
 #include "stm32f4xx_hal.h"
 #include "fonts.h"
+#include "tetris.h"
 
 #ifndef oled
 #define oled
@@ -29,9 +30,11 @@ void oled_UpdateScreen(void);
 void oled_DrawVLine(uint8_t x1, uint8_t x2, uint8_t y, OLED_COLOR color);
 void oled_DrawHLine(uint8_t y1, uint8_t y2, uint8_t x, OLED_COLOR color);
 void oled_DrawSquare(uint8_t x1, uint8_t x2, uint8_t y1, uint8_t y2, OLED_COLOR color);
+void oled_DrawFilledRectangle(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, OLED_COLOR color);
 void oled_DrawPixel(uint8_t x, uint8_t y, OLED_COLOR color);
 char oled_WriteChar(char ch, FontDef Font, OLED_COLOR color);
 char oled_WriteString(char* str, FontDef Font, OLED_COLOR color);
 void oled_SetCursor(uint8_t x, uint8_t y);
+void tetris_render(const TetrisGame *game, uint32_t best_score, bool pause_blink_on);
 
 #endif

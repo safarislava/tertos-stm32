@@ -47,3 +47,51 @@ HAL_StatusTypeDef PCA9538_Check_DefaultConfig(uint16_t addr) {
 HAL_StatusTypeDef PCA9538_Read_Inputs(uint16_t addr, uint8_t* buf) {
   return PCA9538_Read_Register(addr, INPUT_PORT, buf);
 }
+
+HAL_StatusTypeDef PCA9538_OLED_Reset(void) {
+  HAL_StatusTypeDef ret;
+  uint8_t cfg = 0xFF;
+  uint8_t out = 0xFF;
+
+  /* Read configuration of DIP/OLED PCA9538 (0xE0) and configure pin 0 as output (0) */
+  if (PCA9538_Read_Register(DIP_WR_ADDR, CONFIG, &cfg) != HAL_OK) {
+    cfg = 0xFE;
+  } else {
+    cfg &= ~(1u << 0);
+  }
+  ret = PCA9538_Write_Register(DIP_WR_ADDR, CONFIG, &cfg);
+  if (ret != HAL_OK) {
+    return ret;
+  }
+
+  /* Read output register or default to 0xFF */
+  if (PCA9538_Read_Register(DIP_WR_ADDR, OUTPUT_PORT, &out) != HAL_OK) {
+    out = 0xFF;
+  }
+
+  /* 1. Drive pin 0 HIGH */
+  out |= (1u << 0);
+  ret = PCA9538_Write_Register(DIP_WR_ADDR, OUTPUT_PORT, &out);
+  if (ret != HAL_OK) {
+    return ret;
+  }
+  HAL_Delay(1);
+
+  /* 2. Pulse pin 0 LOW (active low reset, min 1 us pulse) */
+  out &= ~(1u << 0);
+  ret = PCA9538_Write_Register(DIP_WR_ADDR, OUTPUT_PORT, &out);
+  if (ret != HAL_OK) {
+    return ret;
+  }
+  HAL_Delay(1);
+
+  /* 3. Return pin 0 HIGH (release reset) and wait >= 1 ms */
+  out |= (1u << 0);
+  ret = PCA9538_Write_Register(DIP_WR_ADDR, OUTPUT_PORT, &out);
+  if (ret != HAL_OK) {
+    return ret;
+  }
+  HAL_Delay(2);
+
+  return HAL_OK;
+}
