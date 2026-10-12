@@ -11,7 +11,7 @@
 enum Button
 {
   B_NONE = 0,
-  B_UP,
+  B_ROTATE,
   B_DOWN,
   B_LEFT,
   B_RIGHT,

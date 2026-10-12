@@ -59,8 +59,8 @@ enum Button Check_Row(uint8_t row) {
             if (row == ROW4) return B_NONE;
         }
         if (!(in & 0x20)) {
-            if (row == ROW1) return B_UP;
-            if (row == ROW2) return B_NONE;
+            if (row == ROW1) return B_NONE;
+            if (row == ROW2) return B_ROTATE;
             if (row == ROW3) return B_DOWN;
             if (row == ROW4) return B_NONE;
         }
