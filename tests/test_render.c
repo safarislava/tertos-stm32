@@ -45,19 +45,16 @@ int main(void)
   tetris_init(&game);
 
   printf("Testing render RUNNING state...\n");
-  tetris_render(&game, 500, false);
+  tetris_render(&game);
 
-  printf("Testing render PAUSED state with blink on...\n");
+  printf("Testing render PAUSED state...\n");
   game.phase = TETRIS_PAUSED;
-  tetris_render(&game, 500, true);
-
-  printf("Testing render PAUSED state with blink off...\n");
-  tetris_render(&game, 500, false);
+  tetris_render(&game);
 
   printf("Testing render GAME_OVER state...\n");
   game.phase = TETRIS_GAME_OVER;
   game.score = 12300;
-  tetris_render(&game, 15000, false);
+  tetris_render(&game);
 
   printf("Testing filled rectangle...\n");
   oled_DrawFilledRectangle(10, 10, 20, 20, White);

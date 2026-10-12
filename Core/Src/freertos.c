@@ -224,7 +224,7 @@ static bool apply_button(enum Button key)
 {
   switch (key)
   {
-  case B_UP:
+  case B_ROTATE:
     return tetris_command(&tetrisGame, TETRIS_CMD_ROTATE);
   case B_DOWN:
     return tetris_command(&tetrisGame, TETRIS_CMD_DOWN);
@@ -264,15 +264,17 @@ void StartTaskOLED(void const * argument)
   }
 
   TetrisGame game;
-  tetris_receive_game(&game, portMAX_DELAY);
 
   while (1)
   {
-    tetris_render(&game);
-    if (i2c_lock(portMAX_DELAY))
+    if (tetris_receive_game(&game, portMAX_DELAY))
     {
-      oled_UpdateScreen();
-      i2c_unlock();
+      tetris_render(&game);
+      if (i2c_lock(portMAX_DELAY))
+      {
+        oled_UpdateScreen();
+        i2c_unlock();
+      }
     }
   }
   /* USER CODE END StartTaskOLED */
