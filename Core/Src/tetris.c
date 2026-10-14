@@ -85,7 +85,6 @@ static uint32_t clear_lines(TetrisGame *game)
   return cleared;
 }
 
-/* Returns true if the old piece was locked, including a game-over spawn. */
 static bool step_down(TetrisGame *game)
 {
   if (tetris_can_place(game, game->active.type, game->active.rotation, game->active.x, game->active.y + 1))
@@ -170,7 +169,6 @@ bool tetris_update(TetrisGame *game, uint32_t elapsed_ms)
     return false;
   }
 
-  /* The wider sum also handles a long update without overflowing milliseconds. */
   uint64_t remaining = (uint64_t)game->fall_elapsed_ms + elapsed_ms;
   bool changed = false;
   while (remaining >= TETRIS_FALL_PERIOD_MS)
@@ -179,7 +177,6 @@ bool tetris_update(TetrisGame *game, uint32_t elapsed_ms)
     changed = true;
     if (step_down(game))
     {
-      /* A new piece gets a full interval even after a delayed task update. */
       return true;
     }
   }
